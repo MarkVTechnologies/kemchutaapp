@@ -98,6 +98,7 @@ export interface Estate {
   amenities?: EstateNamedItem[];
   neighborhood?: EstateNamedItem[];
   paymentPlan?: EstatePaymentPlan[];
+  sytemap?: string; // embeddable estate layout/map URL, rendered as an iframe on web
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;

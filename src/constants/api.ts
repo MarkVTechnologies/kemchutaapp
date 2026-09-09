@@ -162,8 +162,10 @@ export const API = {
   // ── Contact ───────────────────────────────────────────────────────────────
   contact: {
     submit: "/api/contact",
-    ai: {
-      chat: "/api/ai/chat", // backend expects { message, history } → returns { reply }
-    },
   },
+
+  // ── AI Chat ───────────────────────────────────────────────────────────────
+  // backend expects { messages: [{role,content}], stream }. Pass stream:false
+  // to get a plain { reply } JSON response instead of an SSE stream.
+  chat: "/api/chat",
 } as const;

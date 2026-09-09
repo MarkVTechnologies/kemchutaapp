@@ -272,15 +272,17 @@ export default function EstateDetailScreen() {
           </FadeInView>
         ) : null}
 
-        {/* Map */}
-        <FadeInView delay={240}>
-          <View style={[styles.section, { paddingHorizontal: 0 }]}>
-            <Text style={[styles.sectionTitle, { paddingHorizontal: 20 }]}>
-              Location
-            </Text>
-            <PlotMap estate={estate} />
-          </View>
-        </FadeInView>
+        {/* Estate layout map (only present when the backend provides one) */}
+        {estate.sytemap ? (
+          <FadeInView delay={240}>
+            <View style={[styles.section, { paddingHorizontal: 0 }]}>
+              <Text style={[styles.sectionTitle, { paddingHorizontal: 20 }]}>
+                {name} Layout
+              </Text>
+              <PlotMap estate={estate} />
+            </View>
+          </FadeInView>
+        ) : null}
       </ScrollView>
 
       {/* Bottom CTA bar */}

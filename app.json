@@ -18,10 +18,8 @@
       "backgroundColor": "#700CEB"
     },
     "updates": {
-      "enabled": true,
-      "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/6d8bdc10-0410-4065-8ef7-31538d4dacf4",
-      "checkAutomatically": "ON_LOAD"
+      "enabled": false,
+      "checkAutomatically": "NEVER"
     },
     "assetBundlePatterns": [
       "**/*"

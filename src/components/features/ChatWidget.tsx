@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ChatWidget — Floating button + full-screen AI chat modal
-// Sends { message, history } to API.ai.chat, expects { reply } back.
+// Sends { messages, stream: false } to API.chat, expects { reply } back.
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -83,9 +83,12 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (message: string) =>
-      api.post<{ reply?: string; message?: string }>(API.ai.chat, {
-        message,
-        history: messages.map((m) => ({ role: m.role, content: m.content })),
+      api.post<{ reply?: string; message?: string }>(API.chat, {
+        messages: [
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+          { role: "user", content: message },
+        ],
+        stream: false,
       }),
     onSuccess: (res) => {
       const reply =
