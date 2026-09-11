@@ -208,12 +208,23 @@ export interface Subscription {
   maritalStatus?: string;
   dateOfBirth?: string;
   gender?: string;
+  spouseFirstName?: string;
+  spouseLastName?: string;
+  nationality?: string;
+  employerName?: string;
   // Address
   residentialAddress?: string;
   cityTown?: string;
   lga?: string;
   state?: string;
   countryOfResidence?: string;
+  // Next of kin
+  kinFirstName?: string;
+  kinLastName?: string;
+  kinAddress?: string;
+  kinCity?: string;
+  kinLga?: string;
+  kinPhone?: string;
   // Plot
   estateId?: string;
   estateName?: string;

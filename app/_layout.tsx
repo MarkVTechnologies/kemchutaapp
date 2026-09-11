@@ -14,7 +14,6 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { ToastProvider } from "@/components/ui/Toast";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { Colors } from "@/constants/theme";
-import { FeedbackButton } from "@/components/ui/FeedbackButton";
 import { useRef } from "react";
 import * as Linking from "expo-linking";
 
@@ -215,8 +214,6 @@ export default function RootLayout() {
           </BottomSheetModalProvider>
           </ToastProvider>
         </QueryClientProvider>
-        {/* Beta feedback FAB — remove before public launch */}
-        <FeedbackButton />
       </SafeAreaProvider>
     </GestureHandlerRootView>
     </ErrorBoundary>

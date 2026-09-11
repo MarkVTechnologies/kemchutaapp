@@ -5,6 +5,7 @@ import axios, { AxiosError } from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 import { BASE_URL, API } from "@/constants/api";
 import { TokenStore, ClientTokenStore } from "@/services/storage/tokenStore";
+import { reportNetworkSuccess, reportNetworkFailure } from "@/services/networkSignal";
 
 // ── Create base instance ──────────────────────────────────────────────────────
 export const apiClient = axios.create({
@@ -47,8 +48,19 @@ apiClient.interceptors.request.use(
 // On 401: if no session exists it's a wrong-credential login → pass through.
 // If a session exists it's an expired token → clear it so RouteGuard redirects.
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    reportNetworkSuccess();
+    return response;
+  },
   async (error: AxiosError) => {
+    // Any HTTP response at all (even an error status) proves the device
+    // reached the internet — only a true network-level failure (no response)
+    // means the connectivity signal should treat this as an outage.
+    if (error.response) {
+      reportNetworkSuccess();
+    } else if (axios.isAxiosError(error)) {
+      reportNetworkFailure();
+    }
     if (error.response?.status === 401) {
       const realtorToken = await TokenStore.getToken();
       const clientToken  = await ClientTokenStore.getToken();

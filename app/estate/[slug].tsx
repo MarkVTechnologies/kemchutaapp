@@ -103,6 +103,8 @@ export default function EstateDetailScreen() {
     } catch {}
   };
   const handleBook = () => sheetRef.current?.present(estate);
+  const handleSubscribe = () =>
+    router.push(`/subscription/new?estateSlug=${estate.slug}` as any);
 
   return (
     <View style={styles.root}>
@@ -287,17 +289,27 @@ export default function EstateDetailScreen() {
 
       {/* Bottom CTA bar */}
       <View style={[styles.ctaBar, { paddingBottom: insets.bottom + 12 }]}>
-        <View>
+        <View style={styles.ctaPriceRow}>
           <Text style={styles.ctaPriceLabel}>From</Text>
           <Text style={styles.ctaPrice}>{formatNaira(estate.price)}</Text>
         </View>
-        <View style={{ flex: 1 }}>
-          <Button
-            label="Book Inspection"
-            onPress={handleBook}
-            variant="primary"
-            fullWidth
-          />
+        <View style={styles.ctaButtonRow}>
+          <View style={{ flex: 1 }}>
+            <Button
+              label="Book Inspection"
+              onPress={handleBook}
+              variant="outline"
+              fullWidth
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              label="Subscribe Now"
+              onPress={handleSubscribe}
+              variant="primary"
+              fullWidth
+            />
+          </View>
         </View>
       </View>
       <ChatWidget bottomOffset={120} />
@@ -481,9 +493,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    gap: 10,
     paddingHorizontal: 20,
     paddingTop: 12,
     backgroundColor: Colors.surface,
@@ -494,6 +504,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 12,
+  },
+  ctaPriceRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 6,
+  },
+  ctaButtonRow: {
+    flexDirection: "row",
+    gap: 10,
   },
   ctaPriceLabel: { ...Typography.caption, color: Colors.textMuted },
   ctaPrice: { ...Typography.h3, color: Colors.brand, fontWeight: "800" },

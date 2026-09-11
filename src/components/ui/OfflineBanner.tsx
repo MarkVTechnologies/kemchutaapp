@@ -1,37 +1,26 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, View, Text, StyleSheet } from "react-native";
+import { Animated, Text, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { Colors, Typography } from "@/constants/theme";
+import { Typography } from "@/constants/theme";
 
+// Only ever warns about a genuine, sustained outage. There is deliberately
+// no "Connection restored" flash: the underlying network check is a network
+// request itself, and the first one or two attempts right after a cold
+// launch (before the OS radio/DNS have settled) routinely fail even on a
+// perfectly fine connection — that made the "restored" flash appear on
+// almost every app open, on both emulator and real devices.
 export function OfflineBanner() {
   const { isOnline } = useNetworkStatus();
   const translateY = useRef(new Animated.Value(-60)).current;
-  const prevOnline = useRef(true);
 
   useEffect(() => {
-    const wasOnline = prevOnline.current;
-    prevOnline.current = isOnline;
-
-    if (!isOnline) {
-      // Slide down to show
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        bounciness: 4,
-      }).start();
-    } else if (!wasOnline && isOnline) {
-      // Was offline, now online — hide after brief "restored" flash
-      const timer = setTimeout(() => {
-        Animated.timing(translateY, {
-          toValue: -60,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
+    Animated.spring(translateY, {
+      toValue: isOnline ? -60 : 0,
+      useNativeDriver: true,
+      bounciness: isOnline ? 0 : 4,
+    }).start();
   }, [isOnline, translateY]);
 
   const insets = useSafeAreaInsets();
@@ -42,20 +31,13 @@ export function OfflineBanner() {
         styles.banner,
         {
           top: insets.top,
-          backgroundColor: isOnline ? Colors.success : "#1a1a2e",
           transform: [{ translateY }],
         },
       ]}
       pointerEvents="none"
     >
-      <MaterialIcons
-        name={isOnline ? "wifi" : "wifi-off"}
-        size={16}
-        color="#fff"
-      />
-      <Text style={styles.text}>
-        {isOnline ? "Connection restored" : "No internet connection"}
-      </Text>
+      <MaterialIcons name="wifi-off" size={16} color="#fff" />
+      <Text style={styles.text}>No internet connection</Text>
     </Animated.View>
   );
 }
@@ -72,6 +54,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
+    backgroundColor: "#1a1a2e",
   },
   text: {
     ...Typography.labelSm,
