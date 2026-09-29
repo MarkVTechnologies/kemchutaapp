@@ -112,7 +112,8 @@
       "expo-asset",
       "@react-native-community/datetimepicker",
       "expo-web-browser",
-      "react-native-edge-to-edge"
+      "react-native-edge-to-edge",
+      "./plugins/withReleaseSigning"
     ],
     "experiments": {
       "typedRoutes": true
