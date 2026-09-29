@@ -19,6 +19,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
+import { TERMS_URL, PRIVACY_URL, DELETE_ACCOUNT_URL } from "@/constants/links";
 import { useBiometrics } from "@/hooks/useBiometrics";
 import { DotPattern } from "@/components/ui/DotPattern";
 import { FadeInView } from "@/components/ui/FadeInView";
@@ -31,8 +32,6 @@ import {
   Shadow,
 } from "@/constants/theme";
 
-const TERMS_URL = "https://kemchutahomesltd.com/terms";
-const PRIVACY_URL = "https://kemchutahomesltd.com/privacy";
 
 // ── Minimal list row ─────────────────────────────────────────────────────────
 // flexDirection:"row" lives on a plain View (not the Pressable) because inside
@@ -397,8 +396,16 @@ export default function ProfileScreen() {
                 icon="privacy-tip"
                 label="Privacy Policy"
                 onPress={() => openUrl(PRIVACY_URL)}
-                last
+                last={!user}
               />
+              {user ? (
+                <ListRow
+                  icon="delete-outline"
+                  label="Delete Account"
+                  onPress={() => openUrl(DELETE_ACCOUNT_URL)}
+                  last
+                />
+              ) : null}
             </GroupCard>
           </FadeInView>
 

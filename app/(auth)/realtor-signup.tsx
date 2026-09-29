@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as WebBrowser from "expo-web-browser";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/Button";
 import { FadeInView } from "@/components/ui/FadeInView";
 import { DotPattern } from "@/components/ui/DotPattern";
 import { useAuthStore } from "@/store/authStore";
+import { TERMS_URL, PRIVACY_URL } from "@/constants/links";
 import { useBiometrics } from "@/hooks/useBiometrics";
 import {
   Colors,
@@ -665,8 +667,22 @@ export default function RealtorSignupScreen() {
                 <View style={styles.termsBox}>
                   <Text style={styles.termsText}>
                     By registering you agree to KHL's{" "}
-                    <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-                    <Text style={styles.termsLink}>Privacy Policy</Text>.
+                    <Text
+                      style={styles.termsLink}
+                      onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}
+                      accessibilityRole="link"
+                    >
+                      Terms of Service
+                    </Text>{" "}
+                    and{" "}
+                    <Text
+                      style={styles.termsLink}
+                      onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
+                      accessibilityRole="link"
+                    >
+                      Privacy Policy
+                    </Text>
+                    .
                   </Text>
                 </View>
               </View>

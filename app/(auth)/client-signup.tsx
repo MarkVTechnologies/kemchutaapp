@@ -13,6 +13,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as WebBrowser from "expo-web-browser";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +24,7 @@ import { DotPattern } from "@/components/ui/DotPattern";
 import { api } from "@/services/api/client";
 import { API } from "@/constants/api";
 import { useAuthStore } from "@/store/authStore";
+import { TERMS_URL, PRIVACY_URL } from "@/constants/links";
 import {
   Colors,
   Gradients,
@@ -288,9 +290,22 @@ export default function ClientSignupScreen() {
             <View style={styles.termsBox}>
               <Text style={styles.termsText}>
                 By creating an account you agree to KHL's{" "}
-                <Text style={styles.termsLink}>Terms of Service</Text>
+                <Text
+                  style={styles.termsLink}
+                  onPress={() => WebBrowser.openBrowserAsync(TERMS_URL)}
+                  accessibilityRole="link"
+                >
+                  Terms of Service
+                </Text>
                 {" and "}
-                <Text style={styles.termsLink}>Privacy Policy</Text>.
+                <Text
+                  style={styles.termsLink}
+                  onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL)}
+                  accessibilityRole="link"
+                >
+                  Privacy Policy
+                </Text>
+                .
               </Text>
             </View>
 

@@ -18,6 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/store/authStore";
+import { TERMS_URL, PRIVACY_URL, DELETE_ACCOUNT_URL } from "@/constants/links";
 import { useBiometrics } from "@/hooks/useBiometrics";
 import { FadeInView } from "@/components/ui/FadeInView";
 import { DotPattern } from "@/components/ui/DotPattern";
@@ -30,8 +31,6 @@ import {
 } from "@/constants/theme";
 
 // Swap for your real published URLs.
-const TERMS_URL = "https://kemchutahomesltd.com/terms";
-const PRIVACY_URL = "https://kemchutahomesltd.com/privacy";
 
 export default function ClientProfileScreen() {
   const router = useRouter();
@@ -203,6 +202,11 @@ export default function ClientProfileScreen() {
               icon="privacy-tip"
               label="Privacy Policy"
               onPress={() => openUrl(PRIVACY_URL)}
+            />
+            <Row
+              icon="delete-outline"
+              label="Delete Account"
+              onPress={() => openUrl(DELETE_ACCOUNT_URL)}
               last
             />
           </View>
