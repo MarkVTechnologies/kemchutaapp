@@ -114,7 +114,8 @@
       "@react-native-community/datetimepicker",
       "expo-web-browser",
       "react-native-edge-to-edge",
-      "./plugins/withReleaseSigning"
+      "./plugins/withReleaseSigning",
+      "./plugins/withGradleMemory"
     ],
     "experiments": {
       "typedRoutes": true
