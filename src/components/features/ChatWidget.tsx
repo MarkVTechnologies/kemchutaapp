@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -37,6 +38,16 @@ interface Message {
   createdAt: number;
 }
 
+// Reports of AI replies go to the admin inbox through the public contact form
+// (Play's AI-generated content policy requires in-app reporting). The support
+// address is used as the sender so the form's auto-reply stays internal.
+const REPORT_REASONS = [
+  "Offensive or harmful",
+  "Inaccurate or misleading",
+  "Other",
+];
+const REPORT_SENDER_EMAIL = "support@kemchutahomesltd.com";
+
 const SUGGESTIONS = [
   "Show me estates in Lagos",
   "What's the cheapest plot?",
@@ -56,6 +67,7 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [reported, setReported] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const pulse = useRef(new Animated.Value(1)).current;
@@ -144,6 +156,51 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
   const handleClear = () => {
     setMessages([]);
     setInput("");
+    setReported({});
+  };
+
+  const sendReport = async (m: Message, reason: string) => {
+    const idx = messages.findIndex((x) => x.id === m.id);
+    const prompt = [...messages.slice(0, idx)]
+      .reverse()
+      .find((x) => x.role === "user")?.content;
+    const body = [
+      `Reason: ${reason}`,
+      `Reported at: ${new Date().toISOString()}`,
+      "",
+      "User asked:",
+      prompt ?? "(none)",
+      "",
+      "AI replied:",
+      m.content,
+    ]
+      .join("\n")
+      .slice(0, 4900);
+    try {
+      await api.post(API.contact.submit, {
+        name: "KHL App - AI chat report",
+        email: REPORT_SENDER_EMAIL,
+        subject: `AI chat report: ${reason}`,
+        message: body,
+      });
+      setReported((r) => ({ ...r, [m.id]: true }));
+      Alert.alert("Thanks for reporting", "Our team will review this response.");
+    } catch {
+      Alert.alert(
+        "Couldn't send report",
+        "Please check your connection and try again.",
+      );
+    }
+  };
+
+  const handleReport = (m: Message) => {
+    Alert.alert("Report this response", "Why are you reporting it?", [
+      ...REPORT_REASONS.map((reason) => ({
+        text: reason,
+        onPress: () => sendReport(m, reason),
+      })),
+      { text: "Cancel", style: "cancel" as const },
+    ]);
   };
 
   return (
@@ -234,7 +291,13 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
                     color={Colors.brand}
                   />
                 </View>
-                <Text style={styles.welcomeText}>{WELCOME_TEXT}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.welcomeText}>{WELCOME_TEXT}</Text>
+                  <Text style={styles.disclaimerText}>
+                    AI responses can be inaccurate. Tap "Report" under any reply
+                    that is wrong or inappropriate.
+                  </Text>
+                </View>
               </View>
 
               {/* Suggestion chips (only before user starts chatting) */}
@@ -289,6 +352,26 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
                     >
                       {m.content}
                     </Text>
+                    {m.role === "assistant" ? (
+                      reported[m.id] ? (
+                        <Text style={styles.reportedText}>Reported</Text>
+                      ) : (
+                        <Pressable
+                          onPress={() => handleReport(m)}
+                          style={styles.reportBtn}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel="Report this AI response"
+                        >
+                          <MaterialIcons
+                            name="outlined-flag"
+                            size={13}
+                            color={Colors.textMuted}
+                          />
+                          <Text style={styles.reportText}>Report</Text>
+                        </Pressable>
+                      )
+                    ) : null}
                   </View>
                 </View>
               ))}
@@ -549,6 +632,26 @@ const styles = StyleSheet.create({
   typingBubble: { paddingVertical: 14 },
   bubbleText: { ...Typography.body, color: Colors.textPrimary, lineHeight: 20 },
   bubbleTextUser: { color: "#fff" },
+  reportBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 3,
+    marginTop: 6,
+  },
+  reportText: { fontSize: 11, fontWeight: "600", color: Colors.textMuted },
+  reportedText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: Colors.textMuted,
+    marginTop: 6,
+  },
+  disclaimerText: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 6,
+    lineHeight: 15,
+  },
 
   // Input bar
   inputBar: {

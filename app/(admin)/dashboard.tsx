@@ -140,7 +140,6 @@ const MGMT_TILES: Array<{
   { label: "Contact Info",   icon: "location-on",            route: "/(admin)/contact",        bg: "#FCE4EC", color: "#E91E63" },
   { label: "Bank Accounts",  icon: "account-balance",        route: "/(admin)/bank-accounts",  bg: "#E0F7FA", color: "#00ACC1" },
   { label: "Knowledge Base", icon: "psychology",             route: "/(admin)/knowledge-base", bg: "#FBE9E7", color: "#FF5722" },
-  { label: "Reports",        icon: "bar-chart",              route: "/(admin)/reports",        bg: "#F1F8E9", color: "#689F38" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
