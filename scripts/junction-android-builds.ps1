@@ -3,10 +3,14 @@
 # ever has to relativize() a path across a C:\ <-> F:\ drive boundary — the
 # literal-F:-path approach breaks React Native's codegen tasks with
 # "this and base files have different roots".
+# The external drive's letter can change between sessions; pass -BuildDrive D:
+# (etc.) when it isn't mounted as F:. Junctions pointing at another drive are
+# re-pointed.
+param([string]$BuildDrive = "F:")
 $ErrorActionPreference = "Stop"
 
 $projectRoot = "C:\mobileapps\kemchutaapp"
-$targetRoot = "F:\kemchuta-build\node_modules"
+$targetRoot = "$BuildDrive\kemchuta-build\node_modules"
 
 function Set-BuildJunction($androidDir, $targetName) {
     $buildPath = Join-Path $androidDir "build"
@@ -15,10 +19,15 @@ function Set-BuildJunction($androidDir, $targetName) {
     if (Test-Path $buildPath) {
         $item = Get-Item $buildPath -Force
         if ($item.LinkType -eq "Junction") {
-            Write-Output "skip (already junction): $buildPath"
-            return
+            if ($item.Target -eq $target) {
+                Write-Output "skip (already junction): $buildPath"
+                return
+            }
+            # rmdir removes only the link, never the target's contents
+            cmd /c rmdir "$buildPath"
+        } else {
+            Remove-Item -Recurse -Force $buildPath
         }
-        Remove-Item -Recurse -Force $buildPath
     }
 
     New-Item -ItemType Directory -Force -Path $target | Out-Null
