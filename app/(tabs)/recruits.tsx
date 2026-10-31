@@ -156,7 +156,6 @@ export default function RecruitsScreen() {
           data={recruits}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => <RecruitCard recruit={item} />}
-          estimatedItemSize={80}
           contentContainerStyle={{
             paddingTop: 8,
             paddingHorizontal: 16,

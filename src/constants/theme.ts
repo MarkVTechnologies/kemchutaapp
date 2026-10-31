@@ -66,6 +66,7 @@ export const Colors = {
   gold: "#B080FF",
   goldLight: "#D6A1FB",
   goldDark: "#5711BE",
+  goldBg: "#F5EEFF",
 } as const;
 
 // ── Gradient presets (purple / black / white only) ──────────────────────────

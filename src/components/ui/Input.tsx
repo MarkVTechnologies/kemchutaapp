@@ -58,7 +58,7 @@ export const Input = forwardRef<TextInput, InputProps>(({
 
         <TextInput
           ref={ref}
-          style={[styles.input, leftIcon && styles.inputWithLeft, rightIcon && styles.inputWithRight]}
+          style={[styles.input, !!leftIcon && styles.inputWithLeft, !!rightIcon && styles.inputWithRight]}
           placeholderTextColor={Colors.textMuted}
           onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
           onBlur={(e)  => { setFocused(false); props.onBlur?.(e); }}

@@ -4,7 +4,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Set this in your .env file: EXPO_PUBLIC_API_BASE_URL=https://your-api.com
-export const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL!;
+export const BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || "https://api.kemchutahomesltd.com";
 
 export const API = {
   // ── Estates (Public) ──────────────────────────────────────────────────────

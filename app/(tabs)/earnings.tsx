@@ -260,7 +260,6 @@ export default function EarningsScreen() {
           data={commissions}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => <CommissionRow commission={item} />}
-          estimatedItemSize={88}
           contentContainerStyle={{
             paddingTop: 8,
             paddingHorizontal: 16,
