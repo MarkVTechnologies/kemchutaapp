@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Realtor / Admin Profile & Settings — premium redesign
 // ─────────────────────────────────────────────────────────────────────────────
+import Constants from "expo-constants";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -203,7 +204,7 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
         </View>
-        <Text style={styles.version}>Kemchuta Homes · v1.0.0</Text>
+        <Text style={styles.version}>Kemchuta Homes · v{Constants.expoConfig?.version ?? "1.0.0"}</Text>
       </View>
     );
   }
@@ -427,7 +428,7 @@ export default function ProfileScreen() {
             </FadeInView>
           ) : null}
 
-          <Text style={styles.version}>Kemchuta Homes · v1.0.0</Text>
+          <Text style={styles.version}>Kemchuta Homes · v{Constants.expoConfig?.version ?? "1.0.0"}</Text>
         </View>
       </ScrollView>
     </View>
