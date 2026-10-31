@@ -13,17 +13,20 @@ import { Typography } from "@/constants/theme";
 // almost every app open, on both emulator and real devices.
 export function OfflineBanner() {
   const { isOnline } = useNetworkStatus();
-  const translateY = useRef(new Animated.Value(-60)).current;
+  const insets = useSafeAreaInsets();
+  // Hidden position must clear the status-bar inset as well as the banner
+  // itself: with edge-to-edge the inset alone can exceed a fixed offset,
+  // leaving the "hidden" banner peeking out under the clock.
+  const hiddenY = -(insets.top + 80);
+  const translateY = useRef(new Animated.Value(hiddenY)).current;
 
   useEffect(() => {
     Animated.spring(translateY, {
-      toValue: isOnline ? -60 : 0,
+      toValue: isOnline ? hiddenY : 0,
       useNativeDriver: true,
       bounciness: isOnline ? 0 : 4,
     }).start();
-  }, [isOnline, translateY]);
-
-  const insets = useSafeAreaInsets();
+  }, [isOnline, translateY, hiddenY]);
 
   return (
     <Animated.View
