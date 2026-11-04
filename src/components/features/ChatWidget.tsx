@@ -23,6 +23,8 @@ import * as Haptics from "expo-haptics";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/services/api/client";
 import { API } from "@/constants/api";
+import Constants from "expo-constants";
+import { ChatMarkdown, stripChatMarkdown } from "./ChatMarkdown";
 import {
   Colors,
   Gradients,
@@ -167,12 +169,13 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
     const body = [
       `Reason: ${reason}`,
       `Reported at: ${new Date().toISOString()}`,
+      `App version: ${Platform.OS} v${Constants.expoConfig?.version ?? "?"}`,
       "",
       "User asked:",
       prompt ?? "(none)",
       "",
       "AI replied:",
-      m.content,
+      stripChatMarkdown(m.content),
     ]
       .join("\n")
       .slice(0, 4900);
@@ -182,6 +185,9 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
         email: REPORT_SENDER_EMAIL,
         subject: `AI chat report: ${reason}`,
         message: body,
+        // Shows in the email header ("Via … — Mobile app (AI chat) enquiry")
+        // and subject instead of "Not specified".
+        branch: "Mobile app (AI chat)",
       });
       setReported((r) => ({ ...r, [m.id]: true }));
       Alert.alert("Thanks for reporting", "Our team will review this response.");
@@ -344,14 +350,17 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
                       m.role === "user" ? styles.bubbleUser : styles.bubbleAi,
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.bubbleText,
-                        m.role === "user" ? styles.bubbleTextUser : null,
-                      ]}
-                    >
-                      {m.content}
-                    </Text>
+                    {m.role === "assistant" ? (
+                      <ChatMarkdown
+                        content={m.content}
+                        textStyle={styles.bubbleText}
+                        linkStyle={styles.bubbleLink}
+                      />
+                    ) : (
+                      <Text style={[styles.bubbleText, styles.bubbleTextUser]}>
+                        {m.content}
+                      </Text>
+                    )}
                     {m.role === "assistant" ? (
                       reported[m.id] ? (
                         <Text style={styles.reportedText}>Reported</Text>
@@ -632,6 +641,7 @@ const styles = StyleSheet.create({
   typingBubble: { paddingVertical: 14 },
   bubbleText: { ...Typography.body, color: Colors.textPrimary, lineHeight: 20 },
   bubbleTextUser: { color: "#fff" },
+  bubbleLink: { color: Colors.brand, textDecorationLine: "underline" },
   reportBtn: {
     flexDirection: "row",
     alignItems: "center",
