@@ -12,6 +12,8 @@ import {
   ScrollView,
   TextInput,
   KeyboardAvoidingView,
+  Keyboard,
+  Dimensions,
   Platform,
   Animated,
   Alert,
@@ -73,6 +75,26 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const pulse = useRef(new Animated.Value(1)).current;
+
+  // Android keyboard height, used to lift the input bar above the keyboard.
+  const [androidKeyboard, setAndroidKeyboard] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    // Overlap = screen bottom − keyboard top. More reliable than
+    // endCoordinates.height, which excludes the gesture/nav bar area.
+    const show = Keyboard.addListener("keyboardDidShow", (e) =>
+      setAndroidKeyboard(
+        Math.max(0, Dimensions.get("screen").height - e.endCoordinates.screenY),
+      ),
+    );
+    const hide = Keyboard.addListener("keyboardDidHide", () =>
+      setAndroidKeyboard(0),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   // Gentle pulse on the floating button when closed
   useEffect(() => {
@@ -277,9 +299,15 @@ export function ChatWidget({ bottomOffset = 90 }: Props) {
 
           {/* Conversation */}
           <KeyboardAvoidingView
-            style={{ flex: 1 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+            // Android: with edge-to-edge (Android 15+) the window no longer
+            // resizes for the keyboard, so the input bar sat hidden behind it.
+            // Pad by the keyboard height ourselves (KeyboardAvoidingView's own
+            // Android padding lingered after the keyboard closed).
+            style={{
+              flex: 1,
+              paddingBottom: Platform.OS === "android" ? androidKeyboard : 0,
+            }}
           >
             <ScrollView
               ref={scrollRef}
