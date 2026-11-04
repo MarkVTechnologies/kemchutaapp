@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// withGradleMemory — gives Gradle and the Kotlin daemon enough heap/metaspace.
+// withGradleMemory — gives Gradle and the Kotlin daemon enough heap/metaspace,
+// and turns on R8 + resource shrinking for release builds.
 //
 // `expo prebuild` writes org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m,
 // which runs out of Metaspace (KSP in expo-updates) on a cold-cache release
@@ -11,6 +12,10 @@ const PROPS = {
   "org.gradle.jvmargs":
     "-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8",
   "kotlin.daemon.jvmargs": "-Xmx4g -XX:MaxMetaspaceSize=1g",
+  // R8 code shrinking/obfuscation + resource shrinking for release builds.
+  // Play flags bundles below its DEX-optimization threshold (deadline Feb 2027).
+  "android.enableMinifyInReleaseBuilds": "true",
+  "android.enableShrinkResourcesInReleaseBuilds": "true",
 };
 
 module.exports = function withGradleMemory(config) {

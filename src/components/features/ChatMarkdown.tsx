@@ -67,6 +67,8 @@ export function ChatMarkdown({ content, textStyle, linkStyle }: Props) {
       {lines.map((raw, i) => {
         const line = raw.trimEnd();
         if (!line.trim()) return <View key={i} style={styles.gap} />;
+        if (/^\s*([-*_])\1{2,}\s*$/.test(line))
+          return <View key={i} style={styles.rule} />;
 
         const bullet = /^\s*[-*•]\s+(.*)$/.exec(line);
         const numbered = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
@@ -116,6 +118,11 @@ const styles = StyleSheet.create({
   bold: { fontWeight: "700" },
   italic: { fontStyle: "italic" },
   gap: { height: 6 },
+  rule: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(0,0,0,0.15)",
+    marginVertical: 8,
+  },
   listRow: { flexDirection: "row", paddingLeft: 2 },
   marker: { width: 16 },
   listBody: { flex: 1 },
