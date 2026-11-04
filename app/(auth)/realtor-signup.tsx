@@ -28,6 +28,7 @@ import { DotPattern } from "@/components/ui/DotPattern";
 import { useAuthStore } from "@/store/authStore";
 import { TERMS_URL, PRIVACY_URL } from "@/constants/links";
 import { useBiometrics } from "@/hooks/useBiometrics";
+import { useAndroidKeyboardInset } from "@/hooks/useAndroidKeyboardInset";
 import {
   Colors,
   Typography,
@@ -97,6 +98,7 @@ const INITIAL: FormState = {
 export default function RealtorSignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const keyboardInset = useAndroidKeyboardInset();
   const params = useLocalSearchParams<{ ref?: string }>();
   const { realtorSignup, isLoading } = useAuthStore();
   const biometrics = useBiometrics();
@@ -227,7 +229,7 @@ export default function RealtorSignupScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <LinearGradient
         colors={Gradients.royal}
@@ -240,7 +242,10 @@ export default function RealtorSignupScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 16 }]}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + 16, paddingBottom: keyboardInset },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -610,34 +615,29 @@ export default function RealtorSignupScreen() {
           </View>
         </FadeInView>
 
+        {/* Each Button sits in a flex wrapper with fullWidth: Button applies
+            `style` to an inner view, so flex on it never widened the button. */}
         <View style={styles.btnRow}>
           {stepIndex > 0 ? (
-            <Button
-              label="Back"
-              onPress={prevStep}
-              variant="outline"
-              style={styles.btnHalf}
-            />
+            <View style={styles.btnBack}>
+              <Button label="Back" onPress={prevStep} variant="outline" fullWidth />
+            </View>
           ) : null}
-          {step !== "security" ? (
-            <Button
-              label="Next Step"
-              onPress={nextStep}
-              style={stepIndex > 0 ? styles.btnHalf : styles.btnFull}
-              fullWidth={stepIndex === 0}
-            />
-          ) : (
-            <Button
-              label={
-                isLoading ? "Creating Account..." : "Create Realtor Account"
-              }
-              onPress={handleSubmit}
-              loading={isLoading}
-              variant="primary"
-              style={stepIndex > 0 ? styles.btnHalf : styles.btnFull}
-              fullWidth={stepIndex === 0}
-            />
-          )}
+          <View style={styles.btnMain}>
+            {step !== "security" ? (
+              <Button label="Next Step" onPress={nextStep} fullWidth />
+            ) : (
+              <Button
+                label={
+                  isLoading ? "Creating Account..." : "Create Realtor Account"
+                }
+                onPress={handleSubmit}
+                loading={isLoading}
+                variant="primary"
+                fullWidth
+              />
+            )}
+          </View>
         </View>
 
         <View style={{ height: insets.bottom + 32 }} />
@@ -763,6 +763,6 @@ const styles = StyleSheet.create({
   termsLink: { color: Colors.brand, fontWeight: "700" },
 
   btnRow: { flexDirection: "row", gap: 10, marginBottom: 8 },
-  btnHalf: { flex: 1 },
-  btnFull: { flex: 1 },
+  btnBack: { flex: 1 },
+  btnMain: { flex: 2 },
 });

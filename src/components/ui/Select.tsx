@@ -3,7 +3,7 @@
 // web app's native <select> dropdowns (Gender, Marital Status, Nationality,
 // State, Country, Survey Type on the subscription form).
 // ─────────────────────────────────────────────────────────────────────────────
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,9 @@ import {
   FlatList,
   StyleSheet,
   TextInput,
+  Keyboard,
+  Dimensions,
+  Platform,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -52,6 +55,29 @@ export function Select({
     return q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
   }, [options, query]);
 
+  // Android (edge-to-edge) doesn't resize for the keyboard, so typing in the
+  // search box hid the whole sheet. Lift the sheet by the keyboard's real
+  // on-screen overlap and cap its height to the space left above it.
+  const [kb, setKb] = useState(0);
+  useEffect(() => {
+    if (!open || Platform.OS !== "android") return;
+    const show = Keyboard.addListener("keyboardDidShow", (e) =>
+      setKb(Math.max(0, Dimensions.get("screen").height - e.endCoordinates.screenY)),
+    );
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKb(0));
+    return () => {
+      show.remove();
+      hide.remove();
+      setKb(0);
+    };
+  }, [open]);
+  const sheetLift = kb
+    ? {
+        marginBottom: kb,
+        maxHeight: Dimensions.get("screen").height - kb - insets.top - 24,
+      }
+    : null;
+
   const openPicker = () => {
     setQuery("");
     setOpen(true);
@@ -89,7 +115,12 @@ export function Select({
       >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <Pressable
-            style={[styles.sheet, Shadow.lg, { paddingBottom: insets.bottom + 12 }]}
+            style={[
+              styles.sheet,
+              Shadow.lg,
+              { paddingBottom: kb ? 12 : insets.bottom + 12 },
+              sheetLift,
+            ]}
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.sheetHandle} />
@@ -227,6 +258,13 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.borderLight,
   },
   optionActive: {},
-  optionText: { ...Typography.bodyLg, color: Colors.textPrimary },
+  // flex: 1 gives the label the row's full width. Without it Android measured
+  // some labels too narrow ("Access Bank" showed as "Access", others wrapped).
+  optionText: {
+    ...Typography.bodyLg,
+    color: Colors.textPrimary,
+    flex: 1,
+    marginRight: 8,
+  },
   optionTextActive: { color: Colors.brand, fontWeight: "700" },
 });
