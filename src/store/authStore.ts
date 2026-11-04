@@ -116,19 +116,13 @@ export const useAuthStore = create<AuthStore>()(
         s.isLoading = true;
       });
       try {
-        const data = await api.post<LoginResponse>(API.realtors.signup, form);
-
-        await Promise.all([
-          TokenStore.setToken(data.token),
-          TokenStore.setUser(data.user),
-          TokenStore.setRole(data.user.role),
-        ]);
-
-        set((s) => {
-          s.token = data.token;
-          s.user = data.user;
-          s.role = data.user.role;
-        });
+        // The signup endpoint creates the account but returns no token (the
+        // web app sends people to /login afterwards). Storing its missing
+        // token made SecureStore throw, so the app reported "Registration
+        // Failed" for an account that had in fact been created. Sign in with
+        // the same credentials through the normal login instead.
+        await api.post(API.realtors.signup, form);
+        await get().realtorLogin(form.email, form.password);
       } finally {
         set((s) => {
           s.isLoading = false;

@@ -376,12 +376,14 @@ export interface RealtorSignupForm {
   lastName: string;
   email: string;
   phone: string;
+  /** Country of residence; the API stores it as an optional field. */
+  country?: string;
   state: string;
   bank: string;
   accountName: string;
   accountNumber: string;
   birthDate: string;
   password: string;
-  confirmPassword: string;
-  referralCode?: string;
+  /** Recruiter's referral code — the API reads `ref`. */
+  ref?: string;
 }

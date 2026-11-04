@@ -276,7 +276,7 @@ export default function ClientSignupScreen() {
               placeholder="Repeat your password"
               error={errors.confirmPassword}
               required
-              secureTextEntry
+              secureTextEntry={!showPw}
               textContentType="newPassword"
               leftIcon={
                 <MaterialIcons

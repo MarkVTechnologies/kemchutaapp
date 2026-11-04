@@ -3,7 +3,7 @@
 // web app's native <select> dropdowns (Gender, Marital Status, Nationality,
 // State, Country, Survey Type on the subscription form).
 // ─────────────────────────────────────────────────────────────────────────────
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Modal,
   FlatList,
   StyleSheet,
+  TextInput,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,6 +25,10 @@ interface SelectProps {
   placeholder?: string;
   options: string[];
   onSelect: (value: string) => void;
+  /** Shows a filter box at the top of the list — for long lists (banks, states). */
+  searchable?: boolean;
+  /** Optional icon at the start of the field, like Input's leftIcon. */
+  leftIcon?: React.ReactNode;
 }
 
 export function Select({
@@ -34,10 +39,23 @@ export function Select({
   placeholder = "Select an option",
   options,
   onSelect,
+  searchable = false,
+  leftIcon,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
   const hasError = Boolean(error);
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
+  }, [options, query]);
+
+  const openPicker = () => {
+    setQuery("");
+    setOpen(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -49,11 +67,12 @@ export function Select({
       )}
 
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={openPicker}
         style={[styles.field, hasError && styles.errored]}
         accessibilityRole="button"
         accessibilityLabel={label}
       >
+        {leftIcon ? <View style={styles.leftIcon}>{leftIcon}</View> : null}
         <Text style={[styles.value, !value && styles.placeholder]}>
           {value || placeholder}
         </Text>
@@ -75,9 +94,27 @@ export function Select({
           >
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>{label || "Select"}</Text>
+            {searchable ? (
+              <View style={styles.searchBox}>
+                <MaterialIcons name="search" size={18} color={Colors.textMuted} />
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search"
+                  placeholderTextColor={Colors.textMuted}
+                  style={styles.searchInput}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                />
+              </View>
+            ) : null}
             <FlatList
-              data={options}
+              data={shown}
               keyExtractor={(item) => item}
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <Text style={styles.empty}>No matches for "{query}"</Text>
+              }
               style={styles.list}
               renderItem={({ item }) => {
                 const active = item === value;
@@ -158,6 +195,29 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   list: { marginBottom: 8 },
+  leftIcon: { marginRight: 8 },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: Radius.lg,
+    paddingHorizontal: 10,
+    marginBottom: 8,
+  },
+  searchInput: {
+    ...Typography.bodyLg,
+    color: Colors.textPrimary,
+    flex: 1,
+    paddingVertical: 10,
+  },
+  empty: {
+    ...Typography.body,
+    color: Colors.textMuted,
+    textAlign: "center",
+    paddingVertical: 20,
+  },
   option: {
     flexDirection: "row",
     alignItems: "center",

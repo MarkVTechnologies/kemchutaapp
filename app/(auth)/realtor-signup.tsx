@@ -15,6 +15,13 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { NIGERIAN_BANKS, OTHER_BANK } from "@/constants/banks";
+import {
+  OTHER_COUNTRY,
+  REGIONS_BY_COUNTRY,
+  SIGNUP_COUNTRIES,
+} from "@/constants/locations";
 import { Button } from "@/components/ui/Button";
 import { FadeInView } from "@/components/ui/FadeInView";
 import { DotPattern } from "@/components/ui/DotPattern";
@@ -28,67 +35,6 @@ import {
   Shadow,
   Gradients,
 } from "@/constants/theme";
-
-const STATES = [
-  "Abia",
-  "Adamawa",
-  "Akwa Ibom",
-  "Anambra",
-  "Bauchi",
-  "Bayelsa",
-  "Benue",
-  "Borno",
-  "Cross River",
-  "Delta",
-  "Ebonyi",
-  "Edo",
-  "Ekiti",
-  "Enugu",
-  "FCT - Abuja",
-  "Gombe",
-  "Imo",
-  "Jigawa",
-  "Kaduna",
-  "Kano",
-  "Katsina",
-  "Kebbi",
-  "Kogi",
-  "Kwara",
-  "Lagos",
-  "Nasarawa",
-  "Niger",
-  "Ogun",
-  "Ondo",
-  "Osun",
-  "Oyo",
-  "Plateau",
-  "Rivers",
-  "Sokoto",
-  "Taraba",
-  "Yobe",
-  "Zamfara",
-];
-const BANKS = [
-  "Access Bank",
-  "Citibank",
-  "Ecobank",
-  "Fidelity Bank",
-  "First Bank",
-  "FCMB",
-  "GTBank",
-  "Heritage Bank",
-  "Keystone Bank",
-  "MoniePoint",
-  "Opay Digital",
-  "Polaris Bank",
-  "Stanbic IBTC",
-  "Sterling Bank",
-  "Union Bank",
-  "UBA",
-  "Unity Bank",
-  "Wema Bank",
-  "Zenith Bank",
-];
 
 type Step = "personal" | "bank" | "security";
 const STEPS: Step[] = ["personal", "bank", "security"];
@@ -118,9 +64,12 @@ interface FormState {
   lastName: string;
   email: string;
   phone: string;
+  country: string;
+  countryOther: string;
   state: string;
   birthDate: string;
   bank: string;
+  bankOther: string;
   accountName: string;
   accountNumber: string;
   password: string;
@@ -132,138 +81,18 @@ const INITIAL: FormState = {
   lastName: "",
   email: "",
   phone: "",
+  country: "Nigeria",
+  countryOther: "",
   state: "",
   birthDate: "",
   bank: "",
+  bankOther: "",
   accountName: "",
   accountNumber: "",
   password: "",
   confirmPassword: "",
   referralCode: "",
 };
-
-function PickerField({
-  label,
-  value,
-  options,
-  onSelect,
-  placeholder,
-  error,
-  icon,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onSelect: (v: string) => void;
-  placeholder: string;
-  error?: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <View style={pS.wrap}>
-      <Text style={pS.label}>
-        {label} <Text style={{ color: Colors.error }}>*</Text>
-      </Text>
-      <Pressable
-        onPress={() => setOpen((v) => !v)}
-        style={[
-          pS.trigger,
-          error ? pS.errored : null,
-          open ? pS.triggerOpen : null,
-        ]}
-      >
-        <MaterialIcons
-          name={icon}
-          size={20}
-          color={Colors.textMuted}
-          style={{ marginRight: 8 }}
-        />
-        <Text style={value ? pS.val : pS.ph}>{value || placeholder}</Text>
-        <MaterialIcons
-          name={open ? "expand-less" : "expand-more"}
-          size={22}
-          color={Colors.textMuted}
-        />
-      </Pressable>
-      {error ? <Text style={pS.err}>{error}</Text> : null}
-      {open ? (
-        <View style={pS.drop}>
-          <ScrollView
-            style={pS.dropScroll}
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-          >
-            {options.map((opt) => (
-              <Pressable
-                key={opt}
-                onPress={() => {
-                  onSelect(opt);
-                  setOpen(false);
-                }}
-                style={[pS.opt, value === opt ? pS.optSelected : null]}
-              >
-                <Text
-                  style={[
-                    pS.optText,
-                    value === opt ? pS.optTextSelected : null,
-                  ]}
-                >
-                  {opt}
-                </Text>
-                {value === opt ? (
-                  <MaterialIcons name="check" size={18} color={Colors.brand} />
-                ) : null}
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-const pS = StyleSheet.create({
-  wrap: { marginBottom: 16, zIndex: 10 },
-  label: { ...Typography.label, color: Colors.textPrimary, marginBottom: 6 },
-  trigger: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    minHeight: 52,
-    paddingHorizontal: 12,
-  },
-  triggerOpen: { borderColor: Colors.brand },
-  errored: { borderColor: Colors.error },
-  val: { ...Typography.bodyLg, color: Colors.textPrimary, flex: 1 },
-  ph: { ...Typography.bodyLg, color: Colors.textMuted, flex: 1 },
-  drop: {
-    position: "absolute",
-    top: 86,
-    left: 0,
-    right: 0,
-    zIndex: 999,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.brand,
-    ...Shadow.md,
-  },
-  dropScroll: { maxHeight: 220 },
-  opt: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  optSelected: { backgroundColor: Colors.brand50 },
-  optText: { ...Typography.body, color: Colors.textPrimary },
-  optTextSelected: { color: Colors.brand, fontWeight: "700" },
-  err: { ...Typography.caption, color: Colors.error, marginTop: 4 },
-});
 
 export default function RealtorSignupScreen() {
   const router = useRouter();
@@ -278,6 +107,7 @@ export default function RealtorSignupScreen() {
     referralCode: params.ref ?? "",
   });
   const [errors, setErrors] = useState<Partial<FormState>>({});
+  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
     biometrics.checkSupport();
@@ -297,11 +127,15 @@ export default function RealtorSignupScreen() {
         errs.email = "Valid email is required";
       if (!form.phone.trim() || form.phone.length < 10)
         errs.phone = "Valid phone number is required";
-      if (!form.state) errs.state = "State is required";
+      if (form.country === OTHER_COUNTRY && !form.countryOther.trim())
+        errs.countryOther = "Country is required";
+      if (!form.state.trim()) errs.state = "State is required";
       if (!form.birthDate) errs.birthDate = "Date of birth is required";
     }
     if (s === "bank") {
       if (!form.bank) errs.bank = "Bank is required";
+      if (form.bank === OTHER_BANK && !form.bankOther.trim())
+        errs.bankOther = "Enter your bank's name";
       if (!form.accountName.trim())
         errs.accountName = "Account name is required";
       if (!form.accountNumber.trim() || form.accountNumber.length < 10)
@@ -329,7 +163,25 @@ export default function RealtorSignupScreen() {
   const handleSubmit = async () => {
     if (!validateStep("security")) return;
     try {
-      await realtorSignup(form);
+      // Explicit payload, mirroring the web form. `ref` (not referralCode) is
+      // the field the API reads — sending the form as-is silently dropped
+      // referral codes, so recruiters weren't credited.
+      const ref = form.referralCode.trim();
+      await realtorSignup({
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        birthDate: form.birthDate,
+        country:
+          form.country === OTHER_COUNTRY ? form.countryOther.trim() : form.country,
+        state: form.state.trim(),
+        bank: form.bank === OTHER_BANK ? form.bankOther.trim() : form.bank,
+        accountName: form.accountName.trim(),
+        accountNumber: form.accountNumber.trim(),
+        password: form.password,
+        ...(ref ? { ref } : {}),
+      });
       if (biometrics.isAvailable && !biometrics.isEnabled) {
         Alert.alert(
           "Enable Biometric Login?",
@@ -505,15 +357,60 @@ export default function RealtorSignupScreen() {
                     />
                   }
                 />
-                <PickerField
-                  label="State of Residence"
-                  value={form.state}
-                  options={STATES}
-                  onSelect={update("state")}
-                  placeholder="Select state"
-                  error={errors.state}
-                  icon="location-on"
+                <Select
+                  label="Country of Residence"
+                  required
+                  value={form.country}
+                  options={SIGNUP_COUNTRIES}
+                  onSelect={(c) => {
+                    // A state from the previous country no longer applies.
+                    setForm((f) => ({ ...f, country: c, state: "" }));
+                    setErrors((e) => ({ ...e, countryOther: undefined, state: undefined }));
+                  }}
+                  searchable
+                  leftIcon={
+                    <MaterialIcons name="public" size={20} color={Colors.textMuted} />
+                  }
                 />
+                {form.country === OTHER_COUNTRY ? (
+                  <Input
+                    label="Country"
+                    value={form.countryOther}
+                    onChangeText={update("countryOther")}
+                    placeholder="Type your country"
+                    error={errors.countryOther}
+                    required
+                    autoCapitalize="words"
+                  />
+                ) : null}
+                {REGIONS_BY_COUNTRY[form.country] ? (
+                  <Select
+                    label={form.country === "Nigeria" ? "State of Residence" : "State / Region"}
+                    required
+                    value={form.state}
+                    options={REGIONS_BY_COUNTRY[form.country]}
+                    onSelect={update("state")}
+                    placeholder="Select state"
+                    error={errors.state}
+                    searchable
+                    leftIcon={
+                      <MaterialIcons name="location-on" size={20} color={Colors.textMuted} />
+                    }
+                  />
+                ) : (
+                  <Input
+                    label="State / Region"
+                    value={form.state}
+                    onChangeText={update("state")}
+                    placeholder="Type your state or region"
+                    error={errors.state}
+                    required
+                    autoCapitalize="words"
+                    leftIcon={
+                      <MaterialIcons name="location-on" size={20} color={Colors.textMuted} />
+                    }
+                  />
+                )}
                 <Input
                   label="Date of Birth"
                   value={form.birthDate}
@@ -561,15 +458,30 @@ export default function RealtorSignupScreen() {
                     payouts.
                   </Text>
                 </View>
-                <PickerField
+                <Select
                   label="Bank"
+                  required
                   value={form.bank}
-                  options={BANKS}
+                  options={[...NIGERIAN_BANKS, OTHER_BANK]}
                   onSelect={update("bank")}
                   placeholder="Select your bank"
                   error={errors.bank}
-                  icon="account-balance"
+                  searchable
+                  leftIcon={
+                    <MaterialIcons name="account-balance" size={20} color={Colors.textMuted} />
+                  }
                 />
+                {form.bank === OTHER_BANK ? (
+                  <Input
+                    label="Bank Name"
+                    value={form.bankOther}
+                    onChangeText={update("bankOther")}
+                    placeholder="Type your bank's name"
+                    error={errors.bankOther}
+                    required
+                    autoCapitalize="words"
+                  />
+                ) : null}
                 <Input
                   label="Account Name"
                   value={form.accountName}
@@ -615,8 +527,16 @@ export default function RealtorSignupScreen() {
                   placeholder="Minimum 8 characters"
                   error={errors.password}
                   required
-                  secureTextEntry
+                  secureTextEntry={!showPw}
                   textContentType="newPassword"
+                  rightIcon={
+                    <MaterialIcons
+                      name={showPw ? "visibility-off" : "visibility"}
+                      size={20}
+                      color={Colors.textMuted}
+                    />
+                  }
+                  onRightIconPress={() => setShowPw((v) => !v)}
                   leftIcon={
                     <MaterialIcons
                       name="lock-outline"
@@ -654,7 +574,7 @@ export default function RealtorSignupScreen() {
                   placeholder="Repeat your password"
                   error={errors.confirmPassword}
                   required
-                  secureTextEntry
+                  secureTextEntry={!showPw}
                   textContentType="newPassword"
                   leftIcon={
                     <MaterialIcons
