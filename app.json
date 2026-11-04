@@ -2,7 +2,7 @@
   "expo": {
     "name": "Kemchuta Homes",
     "slug": "khl-mobile",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -52,7 +52,7 @@
         "backgroundColor": "#700CEB"
       },
       "package": "com.kemchutahomes.mobile",
-      "versionCode": 3,
+      "versionCode": 4,
       "permissions": [
         "android.permission.VIBRATE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
