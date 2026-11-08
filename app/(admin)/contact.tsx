@@ -18,25 +18,39 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/services/api/client";
 import { API } from "@/constants/api";
+import { getApiErrorMessage } from "@/utils/apiError";
 import { Colors, Gradients, Typography, Radius, Shadow } from "@/constants/theme";
 
 interface Branch {
   _id: string;
-  name: string;
+  branchId: string;
+  label: string;
   address?: string;
-  city?: string;
-  state?: string;
-  phone?: string;
-  email?: string;
-  mapLink?: string;
-  isHeadquarters?: boolean;
+  phones?: string[];
+  emails?: string[];
+  isHQ?: boolean;
 }
 
 interface BranchesResp {
   branches?: Branch[];
 }
 
-const EMPTY: Partial<Branch> = { name: "", address: "", city: "", state: "", phone: "", email: "" };
+interface BranchForm {
+  label: string;
+  address: string;
+  phone: string;
+  email: string;
+}
+
+const EMPTY: BranchForm = { label: "", address: "", phone: "", email: "" };
+
+// The API addresses branches by a slug (branchId) rather than _id, and keeps
+// lists of phones/emails. The form edits the first of each and keeps the rest.
+const firstReplaced = (value: string, existing: string[] = []) =>
+  [value.trim(), ...existing.slice(1)].filter(Boolean);
+
+const toBranchId = (label: string) =>
+  label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 export default function ContactScreen() {
   const router = useRouter();
@@ -44,7 +58,7 @@ export default function ContactScreen() {
   const qc = useQueryClient();
   const [formModal, setFormModal] = useState(false);
   const [editing, setEditing] = useState<Branch | null>(null);
-  const [form, setForm] = useState<Partial<Branch>>(EMPTY);
+  const [form, setForm] = useState<BranchForm>(EMPTY);
 
   const { data, isLoading, isFetching, refetch } = useQuery<BranchesResp>({
     queryKey: ["admin-branches"],
@@ -53,38 +67,53 @@ export default function ContactScreen() {
   });
 
   const createMut = useMutation({
-    mutationFn: (body: Partial<Branch>) => api.post<Branch>(API.branches.create, body),
+    mutationFn: (body: Partial<Branch>) => api.post(API.branches.create, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-branches"] }); closeForm(); },
-    onError: () => Alert.alert("Error", "Could not create branch."),
+    onError: (err) => Alert.alert("Error", getApiErrorMessage(err, "Could not create branch.")),
   });
 
   const updateMut = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Partial<Branch> }) =>
       api.put(API.branches.update(id), body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-branches"] }); closeForm(); },
-    onError: () => Alert.alert("Error", "Could not update branch."),
+    onError: (err) => Alert.alert("Error", getApiErrorMessage(err, "Could not update branch.")),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(API.branches.delete(id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-branches"] }),
-    onError: () => Alert.alert("Error", "Could not delete branch."),
+    onError: (err) => Alert.alert("Error", getApiErrorMessage(err, "Could not delete branch.")),
   });
 
   const openCreate = () => { setEditing(null); setForm(EMPTY); setFormModal(true); };
-  const openEdit = (b: Branch) => { setEditing(b); setForm(b); setFormModal(true); };
+  const openEdit = (b: Branch) => {
+    setEditing(b);
+    setForm({
+      label: b.label,
+      address: b.address ?? "",
+      phone: b.phones?.[0] ?? "",
+      email: b.emails?.[0] ?? "",
+    });
+    setFormModal(true);
+  };
   const closeForm = () => { setFormModal(false); setEditing(null); setForm(EMPTY); };
 
   const handleSave = () => {
-    if (!form.name?.trim()) return Alert.alert("Required", "Branch name is required.");
-    if (editing) updateMut.mutate({ id: editing._id, body: form });
-    else createMut.mutate(form);
+    if (!form.label.trim()) return Alert.alert("Required", "Branch name is required.");
+    const body = {
+      label: form.label.trim(),
+      address: form.address.trim(),
+      phones: firstReplaced(form.phone, editing?.phones),
+      emails: firstReplaced(form.email, editing?.emails),
+    };
+    if (editing) updateMut.mutate({ id: editing.branchId, body });
+    else createMut.mutate({ ...body, branchId: toBranchId(form.label) });
   };
 
   const handleDelete = (b: Branch) => {
-    Alert.alert("Delete Branch", `Remove "${b.name}"?`, [
+    Alert.alert("Delete Branch", `Remove "${b.label}"?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteMut.mutate(b._id) },
+      { text: "Delete", style: "destructive", onPress: () => deleteMut.mutate(b.branchId) },
     ]);
   };
 
@@ -132,16 +161,13 @@ export default function ContactScreen() {
               <View style={styles.cardHeader}>
                 <View style={{ flex: 1 }}>
                   <View style={styles.nameRow}>
-                    <Text style={styles.cardTitle}>{item.name}</Text>
-                    {item.isHeadquarters && (
+                    <Text style={styles.cardTitle}>{item.label}</Text>
+                    {item.isHQ && (
                       <View style={styles.hqBadge}>
                         <Text style={styles.hqText}>HQ</Text>
                       </View>
                     )}
                   </View>
-                  {(item.city || item.state) && (
-                    <Text style={styles.cardSub}>{[item.city, item.state].filter(Boolean).join(", ")}</Text>
-                  )}
                 </View>
                 <View style={styles.cardActions}>
                   <Pressable onPress={() => openEdit(item)} style={styles.iconBtn} hitSlop={8}>
@@ -158,18 +184,18 @@ export default function ContactScreen() {
                   <Text style={styles.metaText}>{item.address}</Text>
                 </View>
               )}
-              {item.phone && (
+              {item.phones?.[0] ? (
                 <View style={styles.metaRow}>
                   <MaterialIcons name="phone" size={13} color={Colors.textMuted} />
-                  <Text style={styles.metaText}>{item.phone}</Text>
+                  <Text style={styles.metaText}>{item.phones.join(", ")}</Text>
                 </View>
-              )}
-              {item.email && (
+              ) : null}
+              {item.emails?.[0] ? (
                 <View style={styles.metaRow}>
                   <MaterialIcons name="email" size={13} color={Colors.textMuted} />
-                  <Text style={styles.metaText}>{item.email}</Text>
+                  <Text style={styles.metaText}>{item.emails.join(", ")}</Text>
                 </View>
-              )}
+              ) : null}
             </View>
           )}
         />
@@ -186,12 +212,10 @@ export default function ContactScreen() {
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
-            <FormField label="Branch Name *" value={form.name ?? ""} onChangeText={(v) => setForm((f) => ({ ...f, name: v }))} />
-            <FormField label="Address" value={form.address ?? ""} onChangeText={(v) => setForm((f) => ({ ...f, address: v }))} />
-            <FormField label="City" value={form.city ?? ""} onChangeText={(v) => setForm((f) => ({ ...f, city: v }))} />
-            <FormField label="State" value={form.state ?? ""} onChangeText={(v) => setForm((f) => ({ ...f, state: v }))} />
-            <FormField label="Phone" value={form.phone ?? ""} onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))} keyboardType="phone-pad" />
-            <FormField label="Email" value={form.email ?? ""} onChangeText={(v) => setForm((f) => ({ ...f, email: v }))} keyboardType="email-address" />
+            <FormField label="Branch Name *" value={form.label} onChangeText={(v) => setForm((f) => ({ ...f, label: v }))} />
+            <FormField label="Address" value={form.address} onChangeText={(v) => setForm((f) => ({ ...f, address: v }))} />
+            <FormField label="Phone" value={form.phone} onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))} keyboardType="phone-pad" />
+            <FormField label="Email" value={form.email} onChangeText={(v) => setForm((f) => ({ ...f, email: v }))} keyboardType="email-address" />
 
             <Pressable onPress={handleSave} disabled={isSaving} style={styles.saveBtn}>
               {isSaving ? (

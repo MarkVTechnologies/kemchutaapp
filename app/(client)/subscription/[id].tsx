@@ -23,7 +23,6 @@ import { subscriptionStatusBucket } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { FadeInView } from "@/components/ui/FadeInView";
 import { InlineLoader } from "@/components/ui/AppLoader";
-import { PaymentInitiator } from "@/components/features/PaymentInitiator";
 import {
   Colors,
   Gradients,
@@ -331,25 +330,6 @@ export default function SubscriptionDetailScreen() {
           </FadeInView>
         ) : null}
       </ScrollView>
-
-      {/* Sticky pay CTA when balance > 0 */}
-      {balance > 0 && bucket !== "rejected" ? (
-        <View style={[styles.ctaBar, { paddingBottom: insets.bottom + 12 }]}>
-          <View>
-            <Text style={styles.ctaLabel}>Balance</Text>
-            <Text style={styles.ctaAmount}>{formatNaira(balance)}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <PaymentInitiator
-              subscriptionId={sub._id}
-              amount={balance}
-              onComplete={() => {
-                listQ.refetch();
-              }}
-            />
-          </View>
-        </View>
-      ) : null}
     </View>
   );
 }

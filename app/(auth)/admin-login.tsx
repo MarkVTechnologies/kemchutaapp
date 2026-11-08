@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from "@/utils/apiError";
 import React, { useState, useRef } from "react";
 import {
   View,
@@ -72,7 +73,7 @@ export default function AdminLoginScreen() {
       router.replace("/(admin)/dashboard" as any);
     } catch (err: unknown) {
       shake();
-      setError(err instanceof Error ? err.message : "Invalid credentials");
+      setError(getApiErrorMessage(err, "Invalid credentials"));
     }
   };
 

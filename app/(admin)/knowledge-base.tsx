@@ -21,29 +21,29 @@ import { api } from "@/services/api/client";
 import { API } from "@/constants/api";
 import { Colors, Gradients, Typography, Radius, Shadow } from "@/constants/theme";
 
+// The only company-info keys the API stores; anything else is dropped.
 interface CompanyInfo {
-  name?: string;
-  tagline?: string;
-  about?: string;
-  address?: string;
-  phone?: string;
+  lagosPhone?: string;
+  asabaPhone?: string;
+  whatsappNumber?: string;
   email?: string;
-  website?: string;
+  lagosAddress?: string;
+  asabaAddress?: string;
+  workingHours?: string;
+  instagramHandle?: string;
 }
 interface Faq {
   _id: string;
   question: string;
   answer: string;
-  isActive?: boolean;
+  active?: boolean;
   order?: number;
 }
+// Notices are a single line of text on the API.
 interface Notice {
   _id: string;
-  title: string;
-  body?: string;
-  message?: string;
-  expiresAt?: string;
-  createdAt?: string;
+  text: string;
+  active?: boolean;
 }
 interface KBData {
   companyInfo?: CompanyInfo;
@@ -131,13 +131,14 @@ function CompanyInfoTab({ data, qc }: { data?: CompanyInfo; qc: any }) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
-      {field("Company Name", "name")}
-      {field("Tagline", "tagline")}
-      {field("About", "about", true)}
-      {field("Address", "address")}
-      {field("Phone", "phone", false, "phone-pad")}
+      {field("Lagos Phone", "lagosPhone", false, "phone-pad")}
+      {field("Asaba Phone", "asabaPhone", false, "phone-pad")}
+      {field("WhatsApp Number", "whatsappNumber", false, "phone-pad")}
       {field("Email", "email", false, "email-address")}
-      {field("Website", "website", false, "url")}
+      {field("Lagos Address", "lagosAddress", true)}
+      {field("Asaba Address", "asabaAddress", true)}
+      {field("Working Hours", "workingHours")}
+      {field("Instagram Handle", "instagramHandle")}
       <Pressable onPress={() => updateMut.mutate(form)} disabled={updateMut.isPending} style={styles.saveBtn}>
         {updateMut.isPending ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>Save Company Info</Text>}
       </Pressable>
@@ -220,10 +221,10 @@ function FaqsTab({ faqs, qc, refetch }: { faqs: Faq[]; qc: any; refetch: () => v
               </View>
               <Text style={styles.faqAnswer} numberOfLines={3}>{item.answer}</Text>
               <View style={styles.faqFooter}>
-                <Text style={styles.faqStatus}>{item.isActive !== false ? "Active" : "Inactive"}</Text>
+                <Text style={styles.faqStatus}>{item.active !== false ? "Active" : "Inactive"}</Text>
                 <Switch
-                  value={item.isActive !== false}
-                  onValueChange={(v) => updateMut.mutate({ id: item._id, body: { isActive: v } })}
+                  value={item.active !== false}
+                  onValueChange={(v) => updateMut.mutate({ id: item._id, body: { active: v } })}
                   trackColor={{ false: Colors.border, true: Colors.brand }}
                   thumbColor="#fff"
                 />
@@ -275,11 +276,11 @@ function FaqsTab({ faqs, qc, refetch }: { faqs: Faq[]; qc: any; refetch: () => v
 // ── Notices ───────────────────────────────────────────────────────────────────
 function NoticesTab({ notices, qc, refetch }: { notices: Notice[]; qc: any; refetch: () => void }) {
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ title: "", message: "", expiresAt: "" });
+  const [form, setForm] = useState({ text: "" });
 
   const addMut = useMutation({
     mutationFn: (body: typeof form) => api.post(API.knowledgeBase.addNotice, body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-knowledge-base"] }); setModal(false); setForm({ title: "", message: "", expiresAt: "" }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-knowledge-base"] }); setModal(false); setForm({ text: "" }); },
     onError: () => Alert.alert("Error", "Could not add notice."),
   });
 
@@ -288,8 +289,6 @@ function NoticesTab({ notices, qc, refetch }: { notices: Notice[]; qc: any; refe
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-knowledge-base"] }),
     onError: () => Alert.alert("Error", "Could not delete notice."),
   });
-
-  const fmt = (d?: string) => d ? new Date(d).toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
   return (
     <View style={{ flex: 1 }}>
@@ -310,9 +309,9 @@ function NoticesTab({ notices, qc, refetch }: { notices: Notice[]; qc: any; refe
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Text style={[styles.formLabel, { flex: 1 }]}>{item.title}</Text>
+                <Text style={[styles.formLabel, { flex: 1 }]}>{item.text}</Text>
                 <Pressable
-                  onPress={() => Alert.alert("Delete Notice?", item.title, [
+                  onPress={() => Alert.alert("Delete Notice?", item.text, [
                     { text: "Cancel", style: "cancel" },
                     { text: "Delete", style: "destructive", onPress: () => deleteMut.mutate(item._id) },
                   ])}
@@ -323,12 +322,6 @@ function NoticesTab({ notices, qc, refetch }: { notices: Notice[]; qc: any; refe
                   <MaterialIcons name="delete-outline" size={18} color={Colors.error} />
                 </Pressable>
               </View>
-              {(item.body || item.message) && (
-                <Text style={styles.faqAnswer} numberOfLines={2}>{item.body ?? item.message}</Text>
-              )}
-              {item.expiresAt && (
-                <Text style={styles.faqStatus}>Expires: {fmt(item.expiresAt)}</Text>
-              )}
             </View>
           )}
         />
@@ -345,19 +338,11 @@ function NoticesTab({ notices, qc, refetch }: { notices: Notice[]; qc: any; refe
           </View>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
             <View style={styles.formField}>
-              <Text style={styles.formLabel}>Title *</Text>
-              <TextInput style={styles.formInput} value={form.title} onChangeText={(v) => setForm((f) => ({ ...f, title: v }))} placeholderTextColor={Colors.textMuted} />
-            </View>
-            <View style={styles.formField}>
-              <Text style={styles.formLabel}>Message</Text>
-              <TextInput style={[styles.formInput, { minHeight: 80, textAlignVertical: "top" }]} value={form.message} onChangeText={(v) => setForm((f) => ({ ...f, message: v }))} multiline placeholderTextColor={Colors.textMuted} />
-            </View>
-            <View style={styles.formField}>
-              <Text style={styles.formLabel}>Expires At (YYYY-MM-DD)</Text>
-              <TextInput style={styles.formInput} value={form.expiresAt} onChangeText={(v) => setForm((f) => ({ ...f, expiresAt: v }))} placeholder="2026-12-31" placeholderTextColor={Colors.textMuted} />
+              <Text style={styles.formLabel}>Notice *</Text>
+              <TextInput style={[styles.formInput, { minHeight: 80, textAlignVertical: "top" }]} value={form.text} onChangeText={(v) => setForm({ text: v })} multiline placeholderTextColor={Colors.textMuted} />
             </View>
             <Pressable onPress={() => {
-              if (!form.title.trim()) return Alert.alert("Required", "Title is required.");
+              if (!form.text.trim()) return Alert.alert("Required", "Notice text is required.");
               addMut.mutate(form);
             }} disabled={addMut.isPending} style={styles.saveBtn}>
               {addMut.isPending ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>Add Notice</Text>}

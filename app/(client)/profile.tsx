@@ -129,11 +129,10 @@ export default function ClientProfileScreen() {
                 router.push("/settings/client-edit-profile" as any)
               }
             />
-            <Row icon="phone" label="Phone" value={client?.phone ?? "—"} />
             <Row
-              icon="notifications-none"
-              label="Notifications"
-              onPress={() => router.push("/notification" as any)}
+              icon="phone"
+              label="Phone"
+              value={client?.phone ?? "—"}
               last
             />
           </View>

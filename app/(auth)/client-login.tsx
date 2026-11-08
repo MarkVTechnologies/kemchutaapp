@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from "@/utils/apiError";
 import React, { useState, useRef } from "react";
 import {
   View,
@@ -81,7 +82,7 @@ export default function ClientLoginScreen() {
     } catch (err: unknown) {
       shake();
       setErrors({
-        password: err instanceof Error ? err.message : "Login failed.",
+        password: getApiErrorMessage(err, "Login failed."),
       });
     }
   };

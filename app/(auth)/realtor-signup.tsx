@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/Button";
 import { FadeInView } from "@/components/ui/FadeInView";
 import { DotPattern } from "@/components/ui/DotPattern";
 import { useAuthStore } from "@/store/authStore";
+import { getApiErrorMessage } from "@/utils/apiError";
 import { TERMS_URL, PRIVACY_URL } from "@/constants/links";
 import { useBiometrics } from "@/hooks/useBiometrics";
 import { useAndroidKeyboardInset } from "@/hooks/useAndroidKeyboardInset";
@@ -132,7 +133,9 @@ export default function RealtorSignupScreen() {
       if (form.country === OTHER_COUNTRY && !form.countryOther.trim())
         errs.countryOther = "Country is required";
       if (!form.state.trim()) errs.state = "State is required";
-      if (!form.birthDate) errs.birthDate = "Date of birth is required";
+      if (!form.birthDate.trim()) errs.birthDate = "Date of birth is required";
+      else if (!/^\d{1,4}[/.\- ]\d{1,2}[/.\- ]\d{1,4}$/.test(form.birthDate.trim()))
+        errs.birthDate = "Use the format YYYY-MM-DD, for example 1990-12-25";
     }
     if (s === "bank") {
       if (!form.bank) errs.bank = "Bank is required";
@@ -174,7 +177,7 @@ export default function RealtorSignupScreen() {
         lastName: form.lastName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
-        birthDate: form.birthDate,
+        birthDate: form.birthDate.trim(),
         country:
           form.country === OTHER_COUNTRY ? form.countryOther.trim() : form.country,
         state: form.state.trim(),
@@ -209,7 +212,7 @@ export default function RealtorSignupScreen() {
     } catch (err: unknown) {
       Alert.alert(
         "Registration Failed",
-        err instanceof Error ? err.message : "Signup failed. Please try again.",
+        getApiErrorMessage(err, "Signup failed. Please try again."),
       );
     }
   };

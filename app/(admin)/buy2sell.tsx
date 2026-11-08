@@ -18,27 +18,37 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/services/api/client";
 import { API } from "@/constants/api";
+import { getApiErrorMessage } from "@/utils/apiError";
 import { Colors, Gradients, Typography, Radius, Shadow } from "@/constants/theme";
 
 interface RoiSettings {
-  roiPercentage?: number;
-  minHoldDays?: number;
-  maturityThreshold?: number;
+  roiPercent6Months?: number;
+  roiPercent12Months?: number;
+  roiPercent18Months?: number;
+  minInvestment?: number;
+  maxInvestment?: number;
 }
 
 interface Buy2SellLead {
   _id: string;
-  clientName?: string;
-  clientEmail?: string;
-  estateName?: string;
-  purchasePrice?: number;
-  marketValue?: number;
-  totalPaid?: number;
-  roiAmount?: number;
+  fullName?: string;
+  email?: string;
+  duration?: string;
+  principalAmount?: number;
+  amountPaid?: number;
+  expectedROI?: number;
+  expectedPayout?: number;
   status?: string;
-  isMature?: boolean;
   createdAt: string;
 }
+
+const ROI_FIELDS: { key: keyof RoiSettings; label: string }[] = [
+  { key: "roiPercent6Months", label: "6 Months ROI (%)" },
+  { key: "roiPercent12Months", label: "12 Months ROI (%)" },
+  { key: "roiPercent18Months", label: "18 Months ROI (%)" },
+  { key: "minInvestment", label: "Minimum Investment (₦)" },
+  { key: "maxInvestment", label: "Maximum Investment (₦)" },
+];
 
 interface LeadsResp {
   leads: Buy2SellLead[];
@@ -51,7 +61,7 @@ const fmt = (d?: string) => d ? new Date(d).toLocaleDateString("en-NG", { day: "
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   active:    { bg: Colors.successBg, text: Colors.success },
-  mature:    { bg: Colors.infoBg,    text: Colors.info },
+  matured:   { bg: Colors.infoBg,    text: Colors.info },
   paid_out:  { bg: "#F3F0FF",        text: Colors.brand },
   cancelled: { bg: Colors.errorBg,   text: Colors.error },
 };
@@ -79,7 +89,7 @@ export default function Buy2SellScreen() {
   const updateRoiMut = useMutation({
     mutationFn: (body: Partial<RoiSettings>) => api.put(API.buy2sell.roi, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-buy2sell-roi"] }); Alert.alert("Saved", "ROI settings updated."); },
-    onError: () => Alert.alert("Error", "Could not save ROI settings."),
+    onError: (err) => Alert.alert("Error", getApiErrorMessage(err, "Could not save ROI settings.")),
   });
 
   // Leads
@@ -98,16 +108,16 @@ export default function Buy2SellScreen() {
       setPaymentAmount("");
       Alert.alert("Recorded", "Payment recorded successfully.");
     },
-    onError: () => Alert.alert("Error", "Could not record payment."),
+    onError: (err) => Alert.alert("Error", getApiErrorMessage(err, "Could not record payment.")),
   });
 
   const matureMut = useMutation({
     mutationFn: (id: string) => api.patch(API.buy2sell.mature(id), {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-buy2sell-leads"] });
-      setSelected((s) => s ? { ...s, isMature: true, status: "mature" } : s);
+      setSelected((s) => s ? { ...s, status: "matured" } : s);
     },
-    onError: () => Alert.alert("Error", "Could not mark as mature."),
+    onError: (err) => Alert.alert("Error", getApiErrorMessage(err, "Could not mark as mature.")),
   });
 
   const payoutMut = useMutation({
@@ -117,7 +127,7 @@ export default function Buy2SellScreen() {
       setSelected((s) => s ? { ...s, status: "paid_out" } : s);
       Alert.alert("Done", "Payout processed.");
     },
-    onError: () => Alert.alert("Error", "Could not process payout."),
+    onError: (err) => Alert.alert("Error", getApiErrorMessage(err, "Could not process payout.")),
   });
 
   const leads = leadsData?.leads ?? [];
@@ -175,15 +185,15 @@ export default function Buy2SellScreen() {
                 <Pressable style={styles.card} onPress={() => setSelected(item)}>
                   <View style={styles.cardTop}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.cardName}>{item.clientName ?? item.clientEmail ?? "—"}</Text>
-                      {item.estateName && <Text style={styles.cardSub}>{item.estateName}</Text>}
+                      <Text style={styles.cardName}>{item.fullName ?? item.email ?? "—"}</Text>
+                      {item.duration ? <Text style={styles.cardSub}>{item.duration}</Text> : null}
                       <Text style={styles.cardDate}>{fmt(item.createdAt)}</Text>
                     </View>
                     <View style={{ alignItems: "flex-end", gap: 6 }}>
                       <View style={[styles.statusBadge, { backgroundColor: ss.bg }]}>
                         <Text style={[styles.statusText, { color: ss.text }]}>{(item.status ?? "pending").replace(/_/g, " ")}</Text>
                       </View>
-                      {item.purchasePrice != null && <Text style={styles.amount}>{N(item.purchasePrice)}</Text>}
+                      {item.principalAmount != null && <Text style={styles.amount}>{N(item.principalAmount)}</Text>}
                     </View>
                   </View>
                 </Pressable>
@@ -200,27 +210,24 @@ export default function Buy2SellScreen() {
               <Text style={styles.roiTitle}>ROI Configuration</Text>
               <Text style={styles.roiSub}>These settings apply to all new Buy2Sell leads.</Text>
 
-              <FormField
-                label="ROI Percentage (%)"
-                value={roiForm.roiPercentage != null ? String(roiForm.roiPercentage) : ""}
-                onChangeText={(v) => setRoiForm((f) => ({ ...f, roiPercentage: parseFloat(v) || undefined }))}
-                keyboardType="decimal-pad"
-              />
-              <FormField
-                label="Minimum Hold Days"
-                value={roiForm.minHoldDays != null ? String(roiForm.minHoldDays) : ""}
-                onChangeText={(v) => setRoiForm((f) => ({ ...f, minHoldDays: parseInt(v) || undefined }))}
-                keyboardType="number-pad"
-              />
-              <FormField
-                label="Maturity Threshold (₦)"
-                value={roiForm.maturityThreshold != null ? String(roiForm.maturityThreshold) : ""}
-                onChangeText={(v) => setRoiForm((f) => ({ ...f, maturityThreshold: parseFloat(v) || undefined }))}
-                keyboardType="decimal-pad"
-              />
+              {ROI_FIELDS.map(({ key, label }) => (
+                <FormField
+                  key={key}
+                  label={label}
+                  value={roiForm[key] != null ? String(roiForm[key]) : ""}
+                  onChangeText={(v) =>
+                    setRoiForm((f) => ({ ...f, [key]: v === "" || isNaN(Number(v)) ? undefined : Number(v) }))
+                  }
+                  keyboardType="decimal-pad"
+                />
+              ))}
 
               <Pressable
-                onPress={() => updateRoiMut.mutate(roiForm)}
+                onPress={() =>
+                  updateRoiMut.mutate(
+                    Object.fromEntries(ROI_FIELDS.map(({ key }) => [key, roiForm[key]])),
+                  )
+                }
                 disabled={updateRoiMut.isPending}
                 style={styles.saveBtn}
               >
@@ -242,33 +249,35 @@ export default function Buy2SellScreen() {
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle} numberOfLines={1}>
-                {selected.clientName ?? selected.clientEmail ?? "Lead"}
+                {selected.fullName ?? selected.email ?? "Lead"}
               </Text>
               <Pressable onPress={() => setSelected(null)} hitSlop={8}>
                 <MaterialIcons name="close" size={24} color={Colors.textSecondary} />
               </Pressable>
             </View>
             <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
-              <InfoRow label="Email" value={selected.clientEmail ?? "—"} />
-              <InfoRow label="Estate" value={selected.estateName ?? "—"} />
-              <InfoRow label="Purchase Price" value={N(selected.purchasePrice)} />
-              <InfoRow label="Market Value" value={N(selected.marketValue)} />
-              <InfoRow label="Total Paid" value={N(selected.totalPaid)} />
-              <InfoRow label="ROI Amount" value={N(selected.roiAmount)} />
+              <InfoRow label="Email" value={selected.email ?? "—"} />
+              <InfoRow label="Duration" value={selected.duration ?? "—"} />
+              <InfoRow label="Principal" value={N(selected.principalAmount)} />
+              <InfoRow label="Total Paid" value={N(selected.amountPaid)} />
+              <InfoRow label="Expected ROI" value={N(selected.expectedROI)} />
+              <InfoRow label="Expected Payout" value={N(selected.expectedPayout)} />
               <InfoRow label="Status" value={(selected.status ?? "pending").replace(/_/g, " ")} />
               <InfoRow label="Created" value={fmt(selected.createdAt)} />
 
               <Text style={styles.sectionLabel}>Actions</Text>
               <View style={styles.actionsGrid}>
-                <Pressable
-                  style={styles.actionBtn}
-                  onPress={() => { setShowPaymentModal(true); }}
-                >
-                  <MaterialIcons name="payments" size={18} color={Colors.brand} />
-                  <Text style={styles.actionBtnText}>Record Payment</Text>
-                </Pressable>
+                {(selected.status === "pending" || selected.status === "partial_paid") && (
+                  <Pressable
+                    style={styles.actionBtn}
+                    onPress={() => { setShowPaymentModal(true); }}
+                  >
+                    <MaterialIcons name="payments" size={18} color={Colors.brand} />
+                    <Text style={styles.actionBtnText}>Record Payment</Text>
+                  </Pressable>
+                )}
 
-                {!selected.isMature && (
+                {selected.status === "active" && (
                   <Pressable
                     style={styles.actionBtn}
                     onPress={() => {
@@ -284,11 +293,11 @@ export default function Buy2SellScreen() {
                   </Pressable>
                 )}
 
-                {selected.isMature && selected.status !== "paid_out" && (
+                {selected.status === "matured" && (
                   <Pressable
                     style={[styles.actionBtn, { borderColor: Colors.brand }]}
                     onPress={() => {
-                      Alert.alert("Process Payout?", `Pay out ROI to ${selected.clientName ?? "client"}?`, [
+                      Alert.alert("Process Payout?", `Pay out ROI to ${selected.fullName ?? "client"}?`, [
                         { text: "Cancel", style: "cancel" },
                         { text: "Confirm", onPress: () => payoutMut.mutate(selected._id) },
                       ]);

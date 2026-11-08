@@ -3,6 +3,8 @@ import { api } from "@/services/api/client";
 import { API } from "@/constants/api";
 import { useAuthStore } from "@/store/authStore";
 
+const NOTIFICATIONS_API_AVAILABLE = false;
+
 type InboxResp =
   | { _id: string; read: boolean }[]
   | { notifications: { _id: string; read: boolean }[] }
@@ -30,7 +32,8 @@ export function useUnreadCount() {
   const { data } = useQuery<InboxResp>({
     queryKey: ["notifications"],
     queryFn: () => api.get<InboxResp>(API.notifications.inbox),
-    enabled: isAuthenticated,
+    // The API has no /api/notifications routes yet; polling would only 404.
+    enabled: NOTIFICATIONS_API_AVAILABLE && isAuthenticated,
     staleTime: 1000 * 60 * 2,
     refetchInterval: 1000 * 60 * 5,
   });
