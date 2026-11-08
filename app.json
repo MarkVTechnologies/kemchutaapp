@@ -2,7 +2,7 @@
   "expo": {
     "name": "Kemchuta Homes",
     "slug": "khl-mobile",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -52,7 +52,7 @@
         "backgroundColor": "#700CEB"
       },
       "package": "com.kemchutahomes.mobile",
-      "versionCode": 6,
+      "versionCode": 7,
       "permissions": [
         "android.permission.VIBRATE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
@@ -111,7 +111,17 @@
         }
       ],
       "expo-asset",
-      "@react-native-community/datetimepicker",
+      [
+        "@react-native-community/datetimepicker",
+        {
+          "android": {
+            "datePicker": {
+              "colorAccent": { "light": "#700CEB" },
+              "colorControlActivated": { "light": "#700CEB" }
+            }
+          }
+        }
+      ],
       "expo-web-browser",
       "react-native-edge-to-edge",
       "./plugins/withReleaseSigning",
