@@ -448,6 +448,7 @@ export default function RealtorSignupScreen() {
                       label="Date of Birth"
                       value={formatBirthDate(form.birthDate)}
                       placeholder="Tap to choose your date"
+                      hint="In the calendar, tap the year at the top to change it."
                       error={errors.birthDate}
                       required
                       editable={false}
