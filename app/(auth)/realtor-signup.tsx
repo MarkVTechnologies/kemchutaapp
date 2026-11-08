@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as WebBrowser from "expo-web-browser";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -61,6 +62,23 @@ const STEP_META: Record<
   },
 };
 
+// Dates stay in plain YYYY-MM-DD so the picker's local time can't shift the day.
+const pad = (n: number) => String(n).padStart(2, "0");
+const toDateString = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const birthDateValue = (s: string) => {
+  const [y, m, d] = s.split("-").map(Number);
+  return y ? new Date(y, m - 1, d) : new Date(1990, 0, 1);
+};
+const formatBirthDate = (s: string) =>
+  s
+    ? birthDateValue(s).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "";
+
 interface FormState {
   firstName: string;
   lastName: string;
@@ -101,6 +119,7 @@ export default function RealtorSignupScreen() {
   const insets = useSafeAreaInsets();
   const keyboardInset = useAndroidKeyboardInset();
   const params = useLocalSearchParams<{ ref?: string }>();
+  const [showBirthPicker, setShowBirthPicker] = useState(false);
   const { realtorSignup, isLoading } = useAuthStore();
   const biometrics = useBiometrics();
 
@@ -419,22 +438,44 @@ export default function RealtorSignupScreen() {
                     }
                   />
                 )}
-                <Input
-                  label="Date of Birth"
-                  value={form.birthDate}
-                  onChangeText={update("birthDate")}
-                  placeholder="YYYY-MM-DD"
-                  error={errors.birthDate}
-                  required
-                  keyboardType="numbers-and-punctuation"
-                  leftIcon={
-                    <MaterialIcons
-                      name="cake"
-                      size={20}
-                      color={Colors.textMuted}
+                <Pressable
+                  onPress={() => setShowBirthPicker(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Date of Birth"
+                >
+                  <View pointerEvents="none">
+                    <Input
+                      label="Date of Birth"
+                      value={formatBirthDate(form.birthDate)}
+                      placeholder="Tap to choose your date"
+                      error={errors.birthDate}
+                      required
+                      editable={false}
+                      leftIcon={
+                        <MaterialIcons
+                          name="cake"
+                          size={20}
+                          color={Colors.textMuted}
+                        />
+                      }
                     />
-                  }
-                />
+                  </View>
+                </Pressable>
+                {showBirthPicker ? (
+                  <DateTimePicker
+                    value={birthDateValue(form.birthDate)}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    maximumDate={new Date()}
+                    minimumDate={new Date(1920, 0, 1)}
+                    onChange={(event, date) => {
+                      setShowBirthPicker(Platform.OS === "ios");
+                      if (event.type === "set" && date) {
+                        update("birthDate")(toDateString(date));
+                      }
+                    }}
+                  />
+                ) : null}
                 <Input
                   label="Referral Code (Optional)"
                   value={form.referralCode}
@@ -462,8 +503,7 @@ export default function RealtorSignupScreen() {
                     color={Colors.brand}
                   />
                   <Text style={styles.bankNoticeText}>
-                    Bank details are encrypted and used only for commission
-                    payouts.
+                    Your bank details are used only for commission payouts.
                   </Text>
                 </View>
                 <Select
